@@ -8,7 +8,7 @@
 ![Status](https://img.shields.io/badge/STATUS-SPRINT_1_DRAFT-2D3436?style=for-the-badge&labelColor=2D3436&color=8E9FD5)
 ![License](https://img.shields.io/badge/DACR_LICENSE-v2.6-2D3436?style=for-the-badge&labelColor=2D3436&color=596170)
 
-> **Scope:** This document applies the EBT Framework v2.6 diagnostic protocol — including ASHEN Knowledge Intake, Pathway Analysis, NNN Governing Layer audit, and CVD Risk Scoring — to the publicly documented G²CPU AI-assisted test workflow architecture. It identifies exactly where CVD risk is present, where NNN governance fires, and where G²CPU's deterministic layer provides structural protection that AI alone cannot.
+> **Scope:** This document applies the EBT Framework v2.6 diagnostic protocol — including ASHEN Knowledge Intake, Pathway Analysis, NNN Governing Layer audit, and CVD Risk Scoring — to the G²CPU + AI-assisted workflow scenario as reconstructed from publicly available architecture documentation. It identifies where CVD risk would be present in that scenario, where NNN governance would need to fire, and where G²CPU's deterministic layer already provides structural protection that AI alone cannot. All findings are scenario-based and require technical validation by Natan Biesmans before any program-specific claim is made.
 >
 > **Prepared by:** Erwin M. McDonald · Epoch Frameworks LLC · Fort Worth, Texas
 > **For review:** Natan Biesmans · G²CPU
@@ -22,7 +22,7 @@
 
 Before any pathway audit runs, the EBT framework requires classifying what type of knowledge the AI system claims to measure, transfer, encode, or replicate. This classification determines which laundering pathways are active before a single bias event is assessed.
 
-In the G²CPU AI-assisted test workflow, the AI inference layer is processing telemetry signals and producing test verdicts or anomaly classifications. The question is: what knowledge is being encoded into that inference layer, and is the encoding mechanism valid for that knowledge type?
+In the G²CPU + AI-assisted workflow scenario, the AI inference layer is processing telemetry signals and producing test verdicts or anomaly classifications. The question is: what knowledge is being encoded into that inference layer, and is the encoding mechanism valid for that knowledge type?
 
 **ASHEN Classification of Knowledge Being Encoded:**
 
@@ -86,7 +86,7 @@ Proceed to Pathway Audit: YES
 
 **What is happening:** The AI inference layer above G²CPU is trained, at least in part, on historical test records — verdicts produced by human engineers reviewing telemetry under specific program conditions, schedules, and organizational pressures. Those verdicts are not neutral data. They carry the evaluative biases of the engineers who produced them, the organizational pressures under which they made decisions, and the specific failure mode distribution of the programs from which they were drawn.
 
-**The specific TDC risk in this workflow:**
+**The specific TDC risk in this scenario:**
 
 Historical test verdicts encode the conditions that existed when those verdicts were produced. If those conditions included schedule pressure (DAL A/B programs routinely operate under extreme schedule pressure), the "pass" verdicts in the training data may reflect decisions that were made under conditions where thorough analysis was not possible. The AI learns to replicate those pass verdicts — including under conditions where they should not have been pass verdicts.
 

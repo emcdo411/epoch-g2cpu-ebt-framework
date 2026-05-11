@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G²CPU × Epoch Frameworks · EBT Framework Integration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:            #04060A;
+    --bg-card:       #080C12;
+    --bg-elevated:   #0C1118;
+    --bg-rule:       #111824;
+    --border:        rgba(255,255,255,0.06);
+    --border-mid:    rgba(255,255,255,0.11);
+    --border-bright: rgba(255,255,255,0.2);
+
+    /* G²CPU signal colors */
+    --cuda:   #76B900;   /* NVIDIA green */
+    --opencl: #0071C5;   /* Intel blue   */
+    --afire:  #E8650A;   /* ArrayFire orange */
+
+    /* Epoch palette */
+    --pw:     #8E9FD5;   /* periwinkle   */
+    --pw-dim: rgba(142,159,213,0.12);
+    --pw-glow:rgba(142,159,213,0.06);
+    --ch:     #2D3436;   /* charcoal     */
+
+    /* Severity */
+    --ebt-red:    #D94F4F;
+    --ebt-red-bg: rgba(217,79,79,0.08);
+    --ebt-amb:    #C9922A;
+    --ebt-amb-bg: rgba(201,146,42,0.08);
+    --ebt-grn:    #4A9E74;
+    --ebt-grn-bg: rgba(74,158,116,0.08);
+    --nnn:        #A78BFA;
+    --nnn-bg:     rgba(167,139,250,0.1);
+
+    --text-hi:  #EDF0F7;
+    --text-mid: rgba(237,240,247,0.55);
+    --text-lo:  rgba(237,240,247,0.28);
+
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text-hi);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* GRID OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(142,159,213,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(142,159,213,0.03) 1px, transparent 1px);
+    background-size: 56px 56px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── TOPBAR ─────────────────────────────── */
+  .topbar {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(4,6,10,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tb-left {
+    font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.16em;
+    color: var(--text-lo);
+  }
+  .tb-left span { color: var(--pw); }
+  .tb-right {
+    display: flex; gap: 20px; align-items: center;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; color: var(--text-lo);
+  }
+  .tb-pill {
+    padding: 3px 10px; border-radius: 3px;
+    background: var(--nnn-bg); color: var(--nnn);
+    border: 1px solid rgba(167,139,250,0.25);
+    font-size: 9px; letter-spacing: 0.14em;
+  }
+
+  /* ─── HERO ───────────────────────────────── */
+  .hero {
+    position: relative; z-index: 5;
+    padding: 88px 48px 72px;
+    max-width: 1080px; margin: 0 auto;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.2em;
+    color: var(--pw); margin-bottom: 28px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 32px; height: 1px;
+    background: var(--pw);
+  }
+
+  .hero-title {
+    font-size: clamp(36px, 5vw, 68px);
+    font-weight: 700; line-height: 1.0;
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+    color: var(--text-hi);
+  }
+  .hero-title .g2 { color: var(--cuda); }
+  .hero-title .ebt { color: var(--pw); }
+
+  .hero-rule {
+    font-size: clamp(15px, 2vw, 22px);
+    font-weight: 300; color: var(--text-mid);
+    letter-spacing: -0.3px; margin-bottom: 40px;
+    line-height: 1.4;
+  }
+
+  .hero-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 44px;
+  }
+  .chip {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; padding: 5px 13px;
+    border-radius: 3px; border: 1px solid;
+  }
+  .chip-pw  { border-color: rgba(142,159,213,0.35); color: var(--pw);  background: var(--pw-dim); }
+  .chip-nnn { border-color: rgba(167,139,250,0.35); color: var(--nnn); background: var(--nnn-bg); }
+  .chip-red { border-color: rgba(217,79,79,0.35);   color: var(--ebt-red); background: var(--ebt-red-bg); }
+  .chip-grn { border-color: rgba(74,158,116,0.35);  color: var(--ebt-grn); background: var(--ebt-grn-bg); }
+  .chip-amb { border-color: rgba(201,146,42,0.35);  color: var(--ebt-amb); background: var(--ebt-amb-bg); }
+
+  /* CVD BOX — the main thesis */
+  .cvd-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-left: 3px solid var(--ebt-red);
+    border-radius: 8px;
+    padding: 36px 40px;
+    max-width: 880px;
+  }
+  .cvd-label {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.2em; color: var(--ebt-red);
+    margin-bottom: 16px;
+  }
+  .cvd-title {
+    font-size: 22px; font-weight: 700;
+    color: var(--text-hi); margin-bottom: 14px;
+    letter-spacing: -0.5px; line-height: 1.25;
+  }
+  .cvd-title span { color: var(--ebt-red); }
+  .cvd-body {
+    font-size: 14px; line-height: 1.8;
+    color: var(--text-mid); max-width: 740px;
+  }
+  .cvd-body strong { color: var(--text-hi); font-weight: 600; }
+
+  /* ─── SECTIONS ───────────────────────────── */
+  .section {
+    position: relative; z-index: 5;
+    max-width: 1080px; margin: 0 auto;
+    padding: 64px 48px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sec-head {
+    display: flex; align-items: baseline;
+    gap: 16px; margin-bottom: 40px;
+  }
+  .sec-num {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.18em; color: var(--text-lo);
+    min-width: 36px;
+  }
+  .sec-title {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-mid);
+  }
+
+  /* ─── EBT PATHWAY DIAGRAM ────────────────── */
+  .pathway-grid {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr 40px 1fr;
+    gap: 0; align-items: start;
+    margin-bottom: 32px;
+  }
+  .pathway-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 24px 22px;
+  }
+  .pathway-card.active {
+    border-color: rgba(217,79,79,0.45);
+    background: var(--ebt-red-bg);
+  }
+  .pathway-card.solution {
+    border-color: rgba(142,159,213,0.35);
+    background: var(--pw-dim);
+  }
+  .pathway-arrow {
+    display: flex; align-items: center;
+    justify-content: center; padding-top: 32px;
+    color: var(--text-lo);
+    font-family: var(--mono); font-size: 18px;
+  }
+  .pw-label {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.16em; color: var(--text-lo);
+    margin-bottom: 10px; text-transform: uppercase;
+  }
+  .pw-title {
+    font-size: 15px; font-weight: 700;
+    color: var(--text-hi); margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .active .pw-title { color: var(--ebt-red); }
+  .solution .pw-title { color: var(--pw); }
+  .pw-body {
+    font-size: 12px; color: var(--text-mid);
+    line-height: 1.65;
+  }
+
+  /* ─── CVD CONSTRUCT ──────────────────────── */
+  .cvd-construct {
+    background: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px; overflow: hidden;
+  }
+  .cvd-header {
+    background: var(--ebt-red-bg);
+    border-bottom: 1px solid rgba(217,79,79,0.2);
+    padding: 20px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .cvd-badge {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.16em; color: var(--ebt-red);
+    padding: 4px 10px; border-radius: 3px;
+    background: rgba(217,79,79,0.15);
+    border: 1px solid rgba(217,79,79,0.3);
+    white-space: nowrap;
+  }
+  .cvd-construct-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text-hi); letter-spacing: -0.3px;
+  }
+  .cvd-inner { padding: 32px; }
+  .cvd-def {
+    font-size: 13px; color: var(--text-mid);
+    line-height: 1.8; margin-bottom: 28px;
+    border-left: 2px solid var(--ebt-red);
+    padding-left: 18px;
+  }
+  .cvd-def strong { color: var(--text-hi); }
+
+  .cvd-loop {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px; margin-bottom: 28px;
+  }
+  .loop-step {
+    background: var(--bg-elevated);
+    padding: 16px 14px; text-align: center;
+  }
+  .loop-step:first-child { border-radius: 6px 0 0 6px; }
+  .loop-step:last-child  { border-radius: 0 6px 6px 0; }
+  .loop-num {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.14em; color: var(--ebt-red);
+    margin-bottom: 6px;
+  }
+  .loop-text {
+    font-size: 11px; color: var(--text-mid);
+    line-height: 1.5;
+  }
+  .loop-arrow {
+    display: flex; align-items: center;
+    justify-content: center;
+    color: var(--text-lo);
+    font-size: 12px;
+  }
+
+  .attribution-line {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-lo); letter-spacing: 0.1em;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .attribution-line .joint {
+    color: var(--pw); font-size: 11px;
+  }
+
+  /* ─── NNN LAYER ──────────────────────────── */
+  .nnn-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .nnn-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--nnn);
+    border-radius: 8px; padding: 24px;
+  }
+  .nnn-mode {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.18em; color: var(--nnn);
+    margin-bottom: 10px;
+  }
+  .nnn-title {
+    font-size: 15px; font-weight: 700;
+    color: var(--text-hi); margin-bottom: 10px;
+    line-height: 1.25;
+  }
+  .nnn-body {
+    font-size: 12px; color: var(--text-mid);
+    line-height: 1.65;
+  }
+  .nnn-body strong { color: var(--nnn); font-weight: 600; }
+
+  /* ─── TRUST BOUNDARY ARCHITECTURE ───────── */
+  .trust-stack {
+    display: flex; flex-direction: column;
+    gap: 2px;
+  }
+  .trust-layer {
+    display: grid;
+    grid-template-columns: 220px 1fr 120px;
+    gap: 0; align-items: stretch;
+    background: var(--border);
+    border-radius: 6px; overflow: hidden;
+  }
+  .tl-label {
+    background: var(--bg-elevated);
+    padding: 16px 20px;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; color: var(--text-lo);
+    display: flex; align-items: center;
+    border-right: 1px solid var(--border);
+  }
+  .tl-body {
+    background: var(--bg-card);
+    padding: 16px 24px;
+    font-size: 12px; color: var(--text-mid);
+    line-height: 1.6;
+    display: flex; align-items: center;
+  }
+  .tl-body strong { color: var(--text-hi); font-weight: 600; }
+  .tl-status {
+    background: var(--bg-card);
+    padding: 16px;
+    display: flex; align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--border);
+  }
+  .status-pill {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.1em; padding: 4px 10px;
+    border-radius: 3px; white-space: nowrap;
+  }
+  .sp-g2  { background: rgba(118,185,0,0.1);   color: var(--cuda);     border: 1px solid rgba(118,185,0,0.3); }
+  .sp-nnn { background: var(--nnn-bg);          color: var(--nnn);      border: 1px solid rgba(167,139,250,0.3); }
+  .sp-ebt { background: var(--ebt-red-bg);      color: var(--ebt-red);  border: 1px solid rgba(217,79,79,0.3); }
+  .sp-cgm { background: var(--pw-dim);          color: var(--pw);       border: 1px solid rgba(142,159,213,0.3); }
+  .sp-eng { background: var(--ebt-amb-bg);      color: var(--ebt-amb);  border: 1px solid rgba(201,146,42,0.3); }
+
+  /* ─── ENGAGEMENT FRAMING ─────────────────── */
+  .engage-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .engage-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 28px;
+  }
+  .engage-num {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.16em; color: var(--pw);
+    margin-bottom: 12px;
+  }
+  .engage-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text-hi); margin-bottom: 10px;
+    letter-spacing: -0.3px; line-height: 1.3;
+  }
+  .engage-body {
+    font-size: 12px; color: var(--text-mid);
+    line-height: 1.7;
+  }
+  .engage-body strong { color: var(--text-hi); font-weight: 600; }
+  .engage-tag {
+    display: inline-block; margin-top: 14px;
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.1em; padding: 4px 10px;
+    border-radius: 3px;
+    background: var(--pw-dim); color: var(--pw);
+    border: 1px solid rgba(142,159,213,0.3);
+  }
+
+  /* ─── CTA ────────────────────────────────── */
+  .cta-wrap {
+    position: relative; z-index: 5;
+    max-width: 1080px; margin: 0 auto;
+    padding: 72px 48px;
+  }
+  .cta-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-mid);
+    border-top: 2px solid var(--pw);
+    border-radius: 12px; padding: 56px 52px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 48px; align-items: center;
+  }
+  .cta-eyebrow {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.18em; color: var(--pw);
+    margin-bottom: 16px;
+  }
+  .cta-headline {
+    font-size: 32px; font-weight: 700;
+    letter-spacing: -1px; line-height: 1.15;
+    color: var(--text-hi); margin-bottom: 16px;
+  }
+  .cta-headline span { color: var(--pw); }
+  .cta-sub {
+    font-size: 13px; color: var(--text-mid);
+    line-height: 1.8; max-width: 520px;
+    margin-bottom: 28px;
+  }
+  .cta-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .cta-list li {
+    font-size: 12px; color: var(--text-lo);
+    display: flex; align-items: flex-start; gap: 10px;
+    line-height: 1.5;
+  }
+  .cta-list li::before {
+    content: '→'; color: var(--pw);
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .cta-list li span { color: var(--text-mid); }
+
+  .cta-actions {
+    display: flex; flex-direction: column;
+    gap: 12px; align-items: center;
+    min-width: 200px;
+  }
+  .btn-main {
+    display: block; width: 100%;
+    background: var(--pw); color: var(--bg);
+    font-family: var(--mono); font-size: 11px;
+    font-weight: 700; letter-spacing: 0.1em;
+    padding: 15px 28px; border-radius: 5px;
+    text-decoration: none; text-align: center;
+    transition: opacity 0.2s;
+  }
+  .btn-main:hover { opacity: 0.85; }
+  .btn-ghost {
+    display: block; width: 100%;
+    background: transparent; color: var(--text-lo);
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; padding: 12px 20px;
+    border-radius: 5px; text-decoration: none;
+    text-align: center; border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--border-mid); color: var(--text-mid); }
+  .btn-note {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-lo); letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  /* ─── FOOTER ─────────────────────────────── */
+  footer {
+    position: relative; z-index: 5;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 24px 48px;
+  }
+  .foot-inner {
+    max-width: 1080px; margin: 0 auto;
+    display: flex; justify-content: space-between;
+    align-items: center;
+  }
+  .foot-l {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-lo); letter-spacing: 0.08em;
+    line-height: 1.7;
+  }
+  .foot-l span { color: var(--pw); }
+  .foot-r {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-lo); letter-spacing: 0.08em;
+    text-align: right; line-height: 1.7;
+  }
+
+  /* ─── ANIMATIONS ─────────────────────────── */
+  .fade-up {
+    opacity: 0; transform: translateY(14px);
+    animation: fu 0.65s ease forwards;
+  }
+  @keyframes fu { to { opacity:1; transform:translateY(0); } }
+  .d1{animation-delay:.06s} .d2{animation-delay:.14s}
+  .d3{animation-delay:.22s} .d4{animation-delay:.32s}
+  .d5{animation-delay:.42s}
+
+  /* ─── RESPONSIVE ─────────────────────────── */
+  @media(max-width:768px){
+    .topbar,.hero,.section,.cta-wrap,footer{padding-left:20px;padding-right:20px;}
+    .pathway-grid{grid-template-columns:1fr;}
+    .pathway-arrow{display:none;}
+    .cvd-loop{grid-template-columns:1fr 1fr;}
+    .nnn-grid{grid-template-columns:1fr;}
+    .trust-layer{grid-template-columns:1fr;}
+    .tl-status,.tl-label{border:none;border-bottom:1px solid var(--border);}
+    .engage-grid{grid-template-columns:1fr;}
+    .cta-box{grid-template-columns:1fr;}
+    .foot-inner{flex-direction:column;gap:12px;text-align:center;}
+    .foot-r{text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <span>EPOCH FRAMEWORKS LLC</span> · EBT v2.6 + NNN GOVERNING LAYER · FRAMEWORK INTEGRATION BRIEF
+  </div>
+  <div class="tb-right">
+    <span class="tb-pill">NNN ACTIVE</span>
+    <span>DACR v2.6</span>
+    <span>McDONALD (2026)</span>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-eyebrow fade-up">NATAN BIESMANS · G²CPU · FRAMEWORK INTEGRATION INTELLIGENCE BRIEF</p>
+
+  <h1 class="hero-title fade-up d1">
+    <span class="g2">G²CPU</span> ×<br>
+    <span class="ebt">EBT Framework</span>
+  </h1>
+  <p class="hero-rule fade-up d2">
+    Where deterministic HPC architecture meets<br>
+    AI governance for safety-critical systems
+  </p>
+
+  <div class="hero-chips fade-up d3">
+    <span class="chip chip-red">CIRCULAR VALIDATION DEPENDENCY · CVD CONSTRUCT</span>
+    <span class="chip chip-nnn">NNN GOVERNING LAYER v2.6</span>
+    <span class="chip chip-pw">EBT FRAMEWORK · McDONALD (2026)</span>
+    <span class="chip chip-amb">$200M SAFETY-CRITICAL CONTEXT</span>
+    <span class="chip chip-grn">COLLABORATIVE FRAMEWORK DEVELOPMENT</span>
+  </div>
+
+  <div class="cvd-box fade-up d4">
+    <p class="cvd-label">CORE THESIS — CIRCULAR VALIDATION DEPENDENCY (CVD)</p>
+    <h2 class="cvd-title">
+      You cannot use AI to validate a system<br>
+      <span>that AI is not yet qualified to assess.</span>
+    </h2>
+    <p class="cvd-body">
+      Natan Biesmans identified something that most AI practitioners have not yet formally named: a structural condition in safety-critical engineering where the AI validation tool and the system under validation share the same probabilistic foundation — making the validation itself unreliable. <strong>This is not a hallucination problem. It is a circular dependency problem.</strong> And it has a name: the Circular Validation Dependency. G²CPU's deterministic execution architecture is not just a performance tool — it is the structural answer to the trust boundary that CVD demands.
+    </p>
+  </div>
+</div>
+
+<!-- EBT PATHWAY -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <span class="sec-title">EBT Pathway Analysis — Where CVD Lives</span>
+  </div>
+
+  <div class="pathway-grid">
+    <div class="pathway-card">
+      <p class="pw-label">PATHWAY 1</p>
+      <p class="pw-title">Structural Criteria Encoding</p>
+      <p class="pw-body">The criteria for what constitutes a valid rocket test are encoded — often implicitly — into AI training data and prompt architecture. Once encoded, those criteria become unchallengeable output. The AI does not know what it does not know about the system it is evaluating.</p>
+    </div>
+    <div class="pathway-arrow">→</div>
+    <div class="pathway-card active">
+      <p class="pw-label">PATHWAY 2 · CVD ZONE</p>
+      <p class="pw-title">Objectivity Laundering at $200M Scale</p>
+      <p class="pw-body">AI-generated test analysis is presented as objective validation output. Engineers — under schedule pressure — treat probabilistic output as deterministic verdict. The hallucination surface is invisible until something fails. At $200M per vehicle, that surface is unacceptable.</p>
+    </div>
+    <div class="pathway-arrow">→</div>
+    <div class="pathway-card solution">
+      <p class="pw-label">SOLUTION LAYER</p>
+      <p class="pw-title">G²CPU as the Trusted Substrate</p>
+      <p class="pw-body">G²CPU's deterministic, hardware-level execution model creates the trust boundary CVD requires. AI informs the engineer. The engineer commands G²CPU. G²CPU executes without probabilistic ambiguity. The intelligence layer and the execution layer are structurally separated.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CVD CONSTRUCT -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <span class="sec-title">The CVD Construct — Framework Contribution</span>
+  </div>
+
+  <div class="cvd-construct">
+    <div class="cvd-header">
+      <span class="cvd-badge">NEW EBT CONSTRUCT</span>
+      <span class="cvd-badge" style="background:var(--nnn-bg);color:var(--nnn);border-color:rgba(167,139,250,0.3)">BIESMANS + McDONALD (2026)</span>
+      <p class="cvd-construct-title">Circular Validation Dependency (CVD)</p>
+    </div>
+    <div class="cvd-inner">
+      <p class="cvd-def">
+        <strong>CVD</strong> describes the condition where an AI system is employed to validate a safety-critical architecture it is structurally unqualified to assess — because the validation tool and the system under test share the same probabilistic foundation. The result is a closed loop where evaluative bias is never surfaced, because the evaluator and the evaluated cannot be meaningfully separated. <strong>CVD is Objectivity Laundering operating at its most dangerous scale.</strong>
+      </p>
+
+      <div class="cvd-loop">
+        <div class="loop-step">
+          <p class="loop-num">STEP 01</p>
+          <p class="loop-text">AI is introduced to assist rocket test validation</p>
+        </div>
+        <div class="loop-step" style="background:rgba(217,79,79,0.06);">
+          <p class="loop-num" style="color:var(--ebt-red)">STEP 02 · BREAK</p>
+          <p class="loop-text">AI output is treated as deterministic test verdict</p>
+        </div>
+        <div class="loop-step" style="background:rgba(217,79,79,0.1);">
+          <p class="loop-num" style="color:var(--ebt-red)">STEP 03 · FAILURE</p>
+          <p class="loop-text">Hallucination surface is invisible until system-level failure</p>
+        </div>
+        <div class="loop-step">
+          <p class="loop-num">STEP 04</p>
+          <p class="loop-text">Trust boundary was never defined — CVD was never detected</p>
+        </div>
+      </div>
+
+      <div class="attribution-line">
+        <span>Construct coined in collaboration:</span>
+        <span class="joint">Natan Biesmans (G²CPU) + Erwin M. McDonald (Epoch Frameworks LLC)</span>
+        <span>· DACR License v2.6 · 2026</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NNN GOVERNING LAYER -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <span class="sec-title">NNN Governing Layer — Why Natan's Instinct Is Already NNN</span>
+  </div>
+
+  <div class="nnn-grid">
+    <div class="nnn-card">
+      <p class="nnn-mode">NNN-D · DETECTION MODE</p>
+      <p class="nnn-title">Detecting Output Drift Before It Becomes Structural</p>
+      <p class="nnn-body">
+        NNN-D monitors AI output for deviation from defined engineering criteria. In Natan's context, <strong>any AI-generated test result that cannot be traced to a deterministic substrate triggers a detection flag</strong> — before it enters an engineering decision chain.
+      </p>
+    </div>
+    <div class="nnn-card">
+      <p class="nnn-mode">NNN-G · GOVERNANCE MODE</p>
+      <p class="nnn-title">Enforcing the Trust Boundary Between AI and Execution</p>
+      <p class="nnn-body">
+        NNN-G defines where AI authority ends and engineer authority begins. In rocket architecture, <strong>AI governs pattern recognition and anomaly flagging. G²CPU governs deterministic execution. The boundary between them is enforced — not assumed.</strong>
+      </p>
+    </div>
+    <div class="nnn-card">
+      <p class="nnn-mode">NNN-H · HUMAN OVERRIDE MODE</p>
+      <p class="nnn-title">Preserving Engineer Judgment as the Final Authority</p>
+      <p class="nnn-body">
+        NNN-H ensures that no AI output — regardless of confidence score — can override a qualified engineer's judgment on a safety-critical decision. <strong>This is the formal expression of what Natan already practices intuitively.</strong> NNN-H makes it a documented, auditable governance layer.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- TRUST BOUNDARY ARCHITECTURE -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <span class="sec-title">Proposed Trust Boundary Architecture — G²CPU × EBT</span>
+  </div>
+
+  <div class="trust-stack">
+    <div class="trust-layer">
+      <div class="tl-label">LAYER 5 · TOP</div>
+      <div class="tl-body"><strong>Engineer Decision Authority</strong> — Final call on all safety-critical test verdicts. No AI output overrides this layer. NNN-H enforced.</div>
+      <div class="tl-status"><span class="status-pill sp-eng">HUMAN AUTHORITY</span></div>
+    </div>
+    <div class="trust-layer">
+      <div class="tl-label">LAYER 4 · GOVERNANCE</div>
+      <div class="tl-body"><strong>CGM + NNN Governance Layer</strong> — Criteria drift detection, output deviation scoring, prompt integrity checks. Flags any AI recommendation that approaches safety-critical decision territory without engineer validation.</div>
+      <div class="tl-status"><span class="status-pill sp-nnn">NNN ACTIVE</span></div>
+    </div>
+    <div class="trust-layer">
+      <div class="tl-label">LAYER 3 · INTELLIGENCE</div>
+      <div class="tl-body"><strong>AI-Assisted Pattern Recognition</strong> — Anomaly detection, telemetry pattern analysis, signal processing intelligence. Operates as advisory layer only. Output is flagged, not acted on, without Layer 4 clearance.</div>
+      <div class="tl-status"><span class="status-pill sp-ebt">EBT GATED</span></div>
+    </div>
+    <div class="trust-layer">
+      <div class="tl-label">LAYER 2 · SIGNAL</div>
+      <div class="tl-body"><strong>G²CPU Signal Processing Layer</strong> — GPU-accelerated HPC, ArrayFire backend, deterministic execution across CUDA / OpenCL / CPU. No probabilistic output. <strong>This is the trust substrate that makes the layers above it valid.</strong></div>
+      <div class="tl-status"><span class="status-pill sp-g2">G²CPU DETERMINISTIC</span></div>
+    </div>
+    <div class="trust-layer">
+      <div class="tl-label">LAYER 1 · HARDWARE</div>
+      <div class="tl-body"><strong>PXI / RADX Hardware Layer</strong> — Physical measurement and acquisition. RADX NVIDIA-based PXIe-GPUs. Ground truth source. Provides the raw signal that every layer above depends on.</div>
+      <div class="tl-status"><span class="status-pill sp-cgm">HARDWARE TRUTH</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ENGAGEMENT FRAMING -->
+<div class="section">
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <span class="sec-title">Collaborative Framework Development — What This Looks Like</span>
+  </div>
+
+  <div class="engage-grid">
+    <div class="engage-card">
+      <p class="engage-num">CONTRIBUTION 01</p>
+      <p class="engage-title">CVD as a Named EBT Construct</p>
+      <p class="engage-body">
+        Natan's egg-to-chicken framing becomes a formally defined EBT sub-construct — <strong>Circular Validation Dependency (CVD)</strong> — with attribution to Biesmans + McDonald (2026). This is a publishable contribution to AI governance literature in safety-critical engineering. The construct addresses a gap that neither the AI safety community nor the aerospace engineering community has formally named.
+      </p>
+      <span class="engage-tag">EBT v2.7 CANDIDATE</span>
+    </div>
+    <div class="engage-card">
+      <p class="engage-num">CONTRIBUTION 02</p>
+      <p class="engage-title">G²CPU as NNN Reference Architecture</p>
+      <p class="engage-body">
+        G²CPU's deterministic execution model becomes the reference implementation for <strong>NNN Layer 2 — the trusted computational substrate</strong> that NNN governance requires before AI output can be considered valid in a safety-critical workflow. This positions G²CPU not just as an HPC toolkit, but as a governance-aware engineering platform.
+      </p>
+      <span class="engage-tag">NNN REFERENCE IMPL</span>
+    </div>
+    <div class="engage-card">
+      <p class="engage-num">CONTRIBUTION 03</p>
+      <p class="engage-title">Joint AI Governance Framework for LabVIEW Aerospace</p>
+      <p class="engage-body">
+        A co-developed white paper targeting the LabVIEW aerospace and defense community: <strong>"Why AI Cannot Be Trusted to Validate What It Cannot Deterministically Execute."</strong> Delivered through GDevCon, NI Tools Network, and Epoch Frameworks publishing channels. Positions both G²CPU and Epoch Frameworks at the intersection of HPC and AI governance.
+      </p>
+      <span class="engage-tag">JOINT PUBLICATION</span>
+    </div>
+    <div class="engage-card">
+      <p class="engage-num">CONTRIBUTION 04</p>
+      <p class="engage-title">EBT Stress Test on Natan's Current Rocket Client Workflow</p>
+      <p class="engage-body">
+        A structured EBT diagnostic applied to the specific AI tooling being introduced into the rocket engineering workflow — identifying <strong>exactly where CVD risk is present, where NNN governance is required, and where G²CPU's deterministic layer provides structural protection</strong> that AI alone cannot. Delivered as a private intelligence brief for Natan's client engagement.
+      </p>
+      <span class="engage-tag">SPRINT 1 CANDIDATE</span>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-box">
+    <div>
+      <p class="cta-eyebrow">WHAT COMES NEXT</p>
+      <h2 class="cta-headline">
+        Your instinct named<br>
+        <span>a framework gap.</span>
+      </h2>
+      <p class="cta-sub">
+        What Natan described in conversation — the egg-to-chicken problem, the untrustworthiness of AI in deterministic validation environments — is not an engineering observation. It is a governance framework contribution. The EBT framework has the architecture to formalize it. G²CPU has the substrate to implement it. The collaboration produces something neither produces alone.
+      </p>
+      <ul class="cta-list">
+        <li><span>CVD construct formalized and attributed — Biesmans + McDonald (2026)</span></li>
+        <li><span>G²CPU positioned as NNN Layer 2 reference architecture</span></li>
+        <li><span>Joint white paper for GDevCon + NI Tools Network distribution</span></li>
+        <li><span>EBT diagnostic applied to active rocket client workflow</span></li>
+        <li><span>No methodology disclosed without a working engagement</span></li>
+      </ul>
+    </div>
+    <div class="cta-actions">
+      <a class="btn-main" href="mailto:erwin.mcdonald@outlook.com?subject=G2CPU × EBT Framework Collaboration — Natan Biesmans">START THE CONVERSATION</a>
+      <a class="btn-ghost" href="#">VIEW ON GITHUB</a>
+      <p class="btn-note">EPOCH FRAMEWORKS LLC · FORT WORTH, TX</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-l">
+      <span>Epoch Frameworks LLC</span> · Erwin M. McDonald · Fort Worth, Texas<br>
+      EBT v2.6 · NNN Governing Layer · Chameleon Governance Model · HCDG
+    </div>
+    <div class="foot-r">
+      DACR LICENSE v2.6 · McDONALD (2026) · ALL FRAMEWORKS PROPRIETARY<br>
+      CVD CONSTRUCT · BIESMANS + McDONALD (2026) · COLLABORATIVE IP
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
